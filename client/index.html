@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel war</title>
+</head>
+
+<body>
+    <h1>Pixel war</h1>
+    <div>
+        <input type="text" placeholder="Largeur" id="width" value="5">
+        <input type="text" placeholder="Hauteur" id="height" value="5">
+        <button onclick="resetGame()">Reset</button>
+    </div>
+
+    <div id="colors">
+        <div id="currentColor" style="width: 50px; height: 50px; background-color: #CCCCCC;"></div>
+        <button onclick="changeColor('#CCCCCC')">Blanc</button>
+        <button onclick="changeColor('#000000')">Noir</button>
+        <button onclick="changeColor('#FF0000')">Rouge</button>
+        <button onclick="changeColor('#00FF00')">Vert</button>
+        <button onclick="changeColor('#0000FF')">Bleu</button>
+    </div>
+
+    <table id="canvas"></table>
+
+    <div>
+        <h2>Users</h2>
+        <ul id="users"></ul>
+    </div>
+</body>
+
+<!-- [
+    {
+        "x": 0,
+        "y": 0,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 1,
+        "y": 0,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 2,
+        "y": 0,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 3,
+        "y": 0,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 4,
+        "y": 0,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 0,
+        "y": 1,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 1,
+        "y": 1,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 2,
+        "y": 1,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 3,
+        "y": 1,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 4,
+        "y": 1,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 0,
+        "y": 2,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 1,
+        "y": 2,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 2,
+        "y": 2,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 3,
+        "y": 2,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 4,
+        "y": 2,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 0,
+        "y": 3,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 1,
+        "y": 3,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 2,
+        "y": 3,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 3,
+        "y": 3,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 4,
+        "y": 3,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 0,
+        "y": 4,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 1,
+        "y": 4,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 2,
+        "y": 4,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 3,
+        "y": 4,
+        "color": "#FFFFFF"
+    },
+    {
+        "x": 4,
+        "y": 4,
+        "color": "#FFFFFF"
+    }
+] -->
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    console.log(socket);
+
+    socket.on('initGame', (canvas) => {
+        const width = document.getElementById('width').value;
+        const height = document.getElementById('height').value;
+        createCanvas(width, height);
+        updateCanvas(canvas);
+    });
+
+    socket.on('updateCanvas', (canvas) => {
+        updateCanvas(canvas);
+    });
+
+    socket.on('updatePixel', (pixel) => {
+        updatePixel(pixel);
+    });
+
+    socket.on('updateUsers', (users) => {
+        const ul = document.getElementById('users');
+        ul.innerHTML = '';
+        users.forEach((user) => {
+            const li = document.createElement('li');
+            li.innerText = user.id;
+            ul.appendChild(li);
+        });
+    });
+
+    let color = '#CCCCCC';
+
+    function changeColor(newColor) {
+        color = newColor;
+        const currentColor = document.getElementById('currentColor');
+        currentColor.style.backgroundColor = color;
+    }
+
+    function resetGame() {
+        const width = document.getElementById('width').value;
+        const height = document.getElementById('height').value;
+        socket.emit('resetGame', { width, height });
+        setTimeout(() => { window.location.reload(); }, 1000);
+    }
+
+    function createCanvas(width, height) {
+        const canvas = document.getElementById('canvas');
+        canvas.innerHTML = '';
+        for (let y = 0; y < height; y++) {
+            const tr = document.createElement('tr');
+            for (let x = 0; x < width; x++) {
+                const td = document.createElement('td');
+                td.id = `x${x}y${y}`;
+                td.style.width = '50px';
+                td.style.height = '50px';
+                td.style.backgroundColor = '#CCCCCC';
+                td.onclick = () => {
+                    socket.emit('setPixel', { x, y, color });
+                };
+                tr.appendChild(td);
+            }
+            canvas.appendChild(tr);
+        }
+    }
+
+    function updateCanvas(canvas) {
+        canvas.forEach((pixel) => {
+            const td = document.getElementById(`x${pixel.x}y${pixel.y}`);
+            td.style.backgroundColor = pixel.color;
+        });
+    }
+
+    function updatePixel(pixel) {
+        const td = document.getElementById(`x${pixel.x}y${pixel.y}`);
+        td.style.backgroundColor = pixel.color;
+    }
+
+</script>
+
+</html>
